@@ -22,8 +22,13 @@ import static org.objectweb.asm.ClassReader.EXPAND_FRAMES
 
 class SettingManagerPlugin extends Transform implements Plugin<Project> {
 
+    private Project applicationProject;
+    private ServiceCollector collector;
+
     @Override
     void apply(Project project) {
+        this.collector = new ServiceCollector(project)
+        this.applicationProject = project
         //registerTransform
         def android = project.extensions.getByType(AppExtension)
         android.registerTransform(this)
@@ -51,6 +56,7 @@ class SettingManagerPlugin extends Transform implements Plugin<Project> {
 
     @Override
     void transform(@NonNull TransformInvocation transformInvocation) {
+        collector.collect()
         println '--------------- LifecyclePlugin visit start --------------- '
         def startTime = System.currentTimeMillis()
         Collection<TransformInput> inputs = transformInvocation.inputs

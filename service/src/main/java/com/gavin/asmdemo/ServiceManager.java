@@ -1,8 +1,5 @@
 package com.gavin.asmdemo;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-
 
 import java.util.HashMap;
 import java.util.Map;
@@ -40,14 +37,12 @@ public class ServiceManager {
         return getServiceOrNull(clazz) != null;
     }
 
-    @NonNull
     public <T> T requireService(Class<T> clazz) {
         T instance = getServiceOrNull(clazz);
         if (instance == null) throw new IllegalStateException("instance can not be null");
         return instance;
     }
 
-    @Nullable
     public <T> T getServiceOrNull(Class<T> clazz) {
         Lock readLock = lock.readLock();
         readLock.lock();

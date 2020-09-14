@@ -1,1 +1,3 @@
+include ':project-mode'
+include ':service'
 include ':app', ':lifecycle-plugin'
