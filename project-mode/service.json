@@ -1,0 +1,5 @@
+{
+  "impl": [
+    "com.gavin.asmdemo.service.ThirdServiceImpl"
+  ]
+}

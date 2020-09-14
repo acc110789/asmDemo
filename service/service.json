@@ -1,0 +1,6 @@
+{
+  "interface": [
+    "com.gavin.asmdemo.service.TwoService",
+    "com.gavin.asmdemo.service.ThirdService"
+  ]
+}

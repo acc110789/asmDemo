@@ -19,6 +19,16 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    flavorDimensions "environment"
+    productFlavors {
+        aa {
+
+        }
+        bb {
+
+        }
+    }
 }
 
 dependencies {
@@ -29,6 +39,10 @@ dependencies {
     def kotlin_version = "1.3.72"
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 
-    implementation project(":project-mode")
+    aaImplementation project(":project-mode")
     implementation project(":service")
+}
+
+for (pro in rootProject.getAllprojects()) {
+    println("pro name " + pro.getName())
 }

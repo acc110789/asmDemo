@@ -1,5 +1,8 @@
 package com.gavin.asmdemo.service;
 
+import com.example.service_anno.ServiceImpl;
+
+@ServiceImpl(name = ServiceNames.TWO_SERVICE)
 public class TwoServiceImpl implements TwoService {
     @Override
     public int doBusinessOne() {

@@ -2,10 +2,13 @@ package com.gavin.asmdemo;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.Keep;
+import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.View;
 import com.gavin.asmdemo.service.TwoService;
 
+@Keep
 public class MainActivity extends BaseActivity {
 
     @Override
@@ -16,7 +19,7 @@ public class MainActivity extends BaseActivity {
         Log.e("MainActivity", "twoService:  " + service.doBusinessTwo());
     }
 
-    public void toSecond(View view) {
+    public void toSecond(@NonNull View view) {
         Intent intent = new Intent(this, SecondActivity.class);
         startActivity(intent);
     }

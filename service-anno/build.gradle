@@ -1,4 +1,5 @@
 apply plugin: 'com.android.library'
+apply plugin: 'maven'
 
 android {
     compileSdkVersion 30
@@ -24,6 +25,22 @@ android {
 
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
-    api "com.gavin.service.annotations:service-anno:0.0.1"
 
+}
+
+//group和version在后面使用自定义插件的时候会用到
+group='com.gavin.service.annotations'
+version='0.0.1'
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            //提交到远程服务器：
+            // repository(url: "http://www.xxx.com/repos") {
+            //    authentication(userName: "admin", password: "admin")
+            // }
+            //本地的Maven地址:当前工程下
+            repository(url: uri('./my-plugin'))
+        }
+    }
 }

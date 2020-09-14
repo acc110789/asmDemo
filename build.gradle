@@ -7,6 +7,9 @@ buildscript {
         maven {
             url uri('./lifecycle-plugin/my-plugin')
         }
+        maven {
+            url uri('./service-anno/my-plugin')
+        }
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.1.3'
@@ -17,8 +20,13 @@ buildscript {
     }
 }
 
+def rootProjectDir = rootProject.projectDir.absolutePath
+
 allprojects {
     repositories {
+        maven {
+            url uri("${rootProjectDir}/service-anno/my-plugin")
+        }
         google()
         jcenter()
     }

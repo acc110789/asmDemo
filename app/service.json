@@ -1,11 +1,5 @@
 {
-  "impl": {
-    "third": "com.gavin.asmdemo.service.ThirdServiceImpl",
-    "two": "com.gavin.asmdemo.service.TwoServiceImpl"
-  },
-
-  "interface": {
-    "two": "com.gavin.asmdemo.service.TwoService",
-    "third": "com.gavin.asmdemo.service.ThirdService"
-  }
+  "impl": [
+    "com.gavin.asmdemo.service.TwoServiceImpl"
+  ]
 }
