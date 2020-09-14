@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import com.gavin.asmdemo.service.TwoService;
 
 public class MainActivity extends BaseActivity {
 
@@ -11,11 +12,17 @@ public class MainActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Log.i("TAG", "MainActivity中的onCreate");
+        TwoService service = ServiceManager.getInstance().requireService(TwoService.class);
+        Log.e("MainActivity", "twoService:  " + service.doBusinessTwo());
     }
 
     public void toSecond(View view) {
         Intent intent = new Intent(this, SecondActivity.class);
         startActivity(intent);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
     }
 }

@@ -106,7 +106,7 @@ j  java_util_Enumeration$nextElement$0.call(Ljava/lang/Object;[Ljava/lang/Object
 j  org.codehaus.groovy.runtime.callsite.CallSiteArray.defaultCall(Lorg/codehaus/groovy/runtime/callsite/CallSite;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;+8
 j  org.codehaus.groovy.runtime.callsite.AbstractCallSite.call(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;+3
 j  org.codehaus.groovy.runtime.callsite.AbstractCallSite.call(Ljava/lang/Object;)Ljava/lang/Object;+5
-j  com.gavin.plugin.lifecycle.LifecyclePlugin.handleJarInputs(Lcom/android/build/api/transform/JarInput;Lcom/android/build/api/transform/TransformOutputProvider;)V+380
+j  com.gavin.plugin.lifecycle.SettingManagerPlugin.handleJarInputs(Lcom/android/build/api/transform/JarInput;Lcom/android/build/api/transform/TransformOutputProvider;)V+380
 v  ~StubRoutines::call_stub
 V  [libjvm.dylib+0x2c062b]  JavaCalls::call_helper(JavaValue*, methodHandle*, JavaCallArguments*, Thread*)+0x597
 V  [libjvm.dylib+0x47ea27]  Reflection::invoke(instanceKlassHandle, methodHandle, Handle, bool, objArrayHandle, BasicType, objArrayHandle, bool, Thread*)+0x6e9
@@ -123,7 +123,7 @@ j  org.codehaus.groovy.runtime.callsite.PogoMetaClassSite.callCurrent(Lgroovy/la
 j  org.codehaus.groovy.runtime.callsite.CallSiteArray.defaultCallCurrent(Lorg/codehaus/groovy/runtime/callsite/CallSite;Lgroovy/lang/GroovyObject;[Ljava/lang/Object;)Ljava/lang/Object;+17
 j  org.codehaus.groovy.runtime.callsite.AbstractCallSite.callCurrent(Lgroovy/lang/GroovyObject;[Ljava/lang/Object;)Ljava/lang/Object;+3
 j  org.codehaus.groovy.runtime.callsite.AbstractCallSite.callCurrent(Lgroovy/lang/GroovyObject;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;+38
-j  com.gavin.plugin.lifecycle.LifecyclePlugin$_transform_closure1$_closure4.doCall(Lcom/android/build/api/transform/JarInput;)Ljava/lang/Object;+17
+j  com.gavin.plugin.lifecycle.SettingManagerPlugin$_transform_closure1$_closure4.doCall(Lcom/android/build/api/transform/JarInput;)Ljava/lang/Object;+17
 v  ~StubRoutines::call_stub
 V  [libjvm.dylib+0x2c062b]  JavaCalls::call_helper(JavaValue*, methodHandle*, JavaCallArguments*, Thread*)+0x597
 V  [libjvm.dylib+0x47ea27]  Reflection::invoke(instanceKlassHandle, methodHandle, Handle, bool, objArrayHandle, BasicType, objArrayHandle, bool, Thread*)+0x6e9
@@ -147,7 +147,7 @@ j  org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite.call(Ljava/lang/Objec
 j  org.codehaus.groovy.runtime.callsite.CallSiteArray.defaultCall(Lorg/codehaus/groovy/runtime/callsite/CallSite;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;+8
 j  org.codehaus.groovy.runtime.callsite.AbstractCallSite.call(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;+3
 j  org.codehaus.groovy.runtime.callsite.AbstractCallSite.call(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;+33
-j  com.gavin.plugin.lifecycle.LifecyclePlugin$_transform_closure1.doCall(Lcom/android/build/api/transform/TransformInput;)Ljava/lang/Object;+70
+j  com.gavin.plugin.lifecycle.SettingManagerPlugin$_transform_closure1.doCall(Lcom/android/build/api/transform/TransformInput;)Ljava/lang/Object;+70
 v  ~StubRoutines::call_stub
 V  [libjvm.dylib+0x2c062b]  JavaCalls::call_helper(JavaValue*, methodHandle*, JavaCallArguments*, Thread*)+0x597
 V  [libjvm.dylib+0x47ea27]  Reflection::invoke(instanceKlassHandle, methodHandle, Handle, bool, objArrayHandle, BasicType, objArrayHandle, bool, Thread*)+0x6e9
@@ -171,7 +171,7 @@ j  org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite.call(Ljava/lang/Objec
 j  org.codehaus.groovy.runtime.callsite.CallSiteArray.defaultCall(Lorg/codehaus/groovy/runtime/callsite/CallSite;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;+8
 j  org.codehaus.groovy.runtime.callsite.AbstractCallSite.call(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;+3
 j  org.codehaus.groovy.runtime.callsite.AbstractCallSite.call(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;+33
-j  com.gavin.plugin.lifecycle.LifecyclePlugin.transform(Lcom/android/build/api/transform/TransformInvocation;)V+135
+j  com.gavin.plugin.lifecycle.SettingManagerPlugin.transform(Lcom/android/build/api/transform/TransformInvocation;)V+135
 j  com.android.build.gradle.internal.pipeline.TransformTask$2.call()Ljava/lang/Void;+103
 j  com.android.build.gradle.internal.pipeline.TransformTask$2.call()Ljava/lang/Object;+1
 j  com.android.builder.profile.ThreadRecorder.record(Lcom/google/wireless/android/sdk/stats/GradleBuildProfileSpan$ExecutionType;Lcom/google/wireless/android/sdk/stats/GradleTransformExecution;Ljava/lang/String;Ljava/lang/String;Lcom/android/builder/profile/Recorder$Block;)Ljava/lang/Object;+17
@@ -207,7 +207,7 @@ j  java_util_Enumeration$nextElement$0.call(Ljava/lang/Object;[Ljava/lang/Object
 j  org.codehaus.groovy.runtime.callsite.CallSiteArray.defaultCall(Lorg/codehaus/groovy/runtime/callsite/CallSite;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;+8
 j  org.codehaus.groovy.runtime.callsite.AbstractCallSite.call(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;+3
 j  org.codehaus.groovy.runtime.callsite.AbstractCallSite.call(Ljava/lang/Object;)Ljava/lang/Object;+5
-j  com.gavin.plugin.lifecycle.LifecyclePlugin.handleJarInputs(Lcom/android/build/api/transform/JarInput;Lcom/android/build/api/transform/TransformOutputProvider;)V+380
+j  com.gavin.plugin.lifecycle.SettingManagerPlugin.handleJarInputs(Lcom/android/build/api/transform/JarInput;Lcom/android/build/api/transform/TransformOutputProvider;)V+380
 v  ~StubRoutines::call_stub
 J 1378  sun.reflect.NativeMethodAccessorImpl.invoke0(Ljava/lang/reflect/Method;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object; (0 bytes) @ 0x000000010aa2c677 [0x000000010aa2c600+0x77]
 J 1377 C1 sun.reflect.NativeMethodAccessorImpl.invoke(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object; (104 bytes) @ 0x000000010aa2dc9c [0x000000010aa2cac0+0x11dc]
@@ -220,7 +220,7 @@ j  org.codehaus.groovy.runtime.callsite.PogoMetaClassSite.callCurrent(Lgroovy/la
 j  org.codehaus.groovy.runtime.callsite.CallSiteArray.defaultCallCurrent(Lorg/codehaus/groovy/runtime/callsite/CallSite;Lgroovy/lang/GroovyObject;[Ljava/lang/Object;)Ljava/lang/Object;+17
 j  org.codehaus.groovy.runtime.callsite.AbstractCallSite.callCurrent(Lgroovy/lang/GroovyObject;[Ljava/lang/Object;)Ljava/lang/Object;+3
 j  org.codehaus.groovy.runtime.callsite.AbstractCallSite.callCurrent(Lgroovy/lang/GroovyObject;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;+38
-j  com.gavin.plugin.lifecycle.LifecyclePlugin$_transform_closure1$_closure4.doCall(Lcom/android/build/api/transform/JarInput;)Ljava/lang/Object;+17
+j  com.gavin.plugin.lifecycle.SettingManagerPlugin$_transform_closure1$_closure4.doCall(Lcom/android/build/api/transform/JarInput;)Ljava/lang/Object;+17
 v  ~StubRoutines::call_stub
 J 1378  sun.reflect.NativeMethodAccessorImpl.invoke0(Ljava/lang/reflect/Method;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object; (0 bytes) @ 0x000000010aa2c677 [0x000000010aa2c600+0x77]
 J 1377 C1 sun.reflect.NativeMethodAccessorImpl.invoke(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object; (104 bytes) @ 0x000000010aa2dc9c [0x000000010aa2cac0+0x11dc]
@@ -240,7 +240,7 @@ j  org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite.call(Ljava/lang/Objec
 j  org.codehaus.groovy.runtime.callsite.CallSiteArray.defaultCall(Lorg/codehaus/groovy/runtime/callsite/CallSite;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;+8
 j  org.codehaus.groovy.runtime.callsite.AbstractCallSite.call(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;+3
 j  org.codehaus.groovy.runtime.callsite.AbstractCallSite.call(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;+33
-j  com.gavin.plugin.lifecycle.LifecyclePlugin$_transform_closure1.doCall(Lcom/android/build/api/transform/TransformInput;)Ljava/lang/Object;+70
+j  com.gavin.plugin.lifecycle.SettingManagerPlugin$_transform_closure1.doCall(Lcom/android/build/api/transform/TransformInput;)Ljava/lang/Object;+70
 v  ~StubRoutines::call_stub
 J 1378  sun.reflect.NativeMethodAccessorImpl.invoke0(Ljava/lang/reflect/Method;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object; (0 bytes) @ 0x000000010aa2c677 [0x000000010aa2c600+0x77]
 J 1377 C1 sun.reflect.NativeMethodAccessorImpl.invoke(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object; (104 bytes) @ 0x000000010aa2dc9c [0x000000010aa2cac0+0x11dc]
@@ -260,7 +260,7 @@ j  org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite.call(Ljava/lang/Objec
 j  org.codehaus.groovy.runtime.callsite.CallSiteArray.defaultCall(Lorg/codehaus/groovy/runtime/callsite/CallSite;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;+8
 j  org.codehaus.groovy.runtime.callsite.AbstractCallSite.call(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;+3
 j  org.codehaus.groovy.runtime.callsite.AbstractCallSite.call(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;+33
-j  com.gavin.plugin.lifecycle.LifecyclePlugin.transform(Lcom/android/build/api/transform/TransformInvocation;)V+135
+j  com.gavin.plugin.lifecycle.SettingManagerPlugin.transform(Lcom/android/build/api/transform/TransformInvocation;)V+135
 j  com.android.build.gradle.internal.pipeline.TransformTask$2.call()Ljava/lang/Void;+103
 j  com.android.build.gradle.internal.pipeline.TransformTask$2.call()Ljava/lang/Object;+1
 j  com.android.builder.profile.ThreadRecorder.record(Lcom/google/wireless/android/sdk/stats/GradleBuildProfileSpan$ExecutionType;Lcom/google/wireless/android/sdk/stats/GradleTransformExecution;Ljava/lang/String;Ljava/lang/String;Lcom/android/builder/profile/Recorder$Block;)Ljava/lang/Object;+17

@@ -20,7 +20,7 @@ import java.util.zip.ZipEntry
 
 import static org.objectweb.asm.ClassReader.EXPAND_FRAMES
 
-class LifecyclePlugin extends Transform implements Plugin<Project> {
+class SettingManagerPlugin extends Transform implements Plugin<Project> {
 
     @Override
     void apply(Project project) {
@@ -79,17 +79,20 @@ class LifecyclePlugin extends Transform implements Plugin<Project> {
      * 处理文件目录下的class文件
      */
     static void handleDirectoryInput(DirectoryInput directoryInput, TransformOutputProvider outputProvider) {
+        def parent = directoryInput.file
+        println '----------- directory parent file <' + parent.absolutePath + '> -----------'
+
         //是否是目录
-        if (directoryInput.file.isDirectory()) {
+        if (parent.isDirectory()) {
             //列出目录所有文件（包含子文件夹，子文件夹内文件）
-            directoryInput.file.eachFileRecurse { File file ->
+            parent.eachFileRecurse { File file ->
                 def name = file.name
                 if (checkClassFile(name)) {
                     println '----------- deal with "class" file <' + name + '> -----------'
                     ClassReader classReader = new ClassReader(file.bytes)
                     ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_MAXS)
-                    ClassVisitor cv = new LifecycleClassVisitor(classWriter)
-                    classReader.accept(cv, EXPAND_FRAMES)
+                    ClassVisitor classVisitor = new SettingManagerClassVisitor(classWriter)
+                    classReader.accept(classVisitor, EXPAND_FRAMES)
                     byte[] code = classWriter.toByteArray()
                     FileOutputStream fos = new FileOutputStream(
                             file.parentFile.absolutePath + File.separator + name)
@@ -137,7 +140,7 @@ class LifecyclePlugin extends Transform implements Plugin<Project> {
                     jarOutputStream.putNextEntry(zipEntry)
                     ClassReader classReader = new ClassReader(IOUtils.toByteArray(inputStream))
                     ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_MAXS)
-                    ClassVisitor cv = new LifecycleClassVisitor(classWriter)
+                    ClassVisitor cv = new SettingManagerClassVisitor(classWriter)
                     classReader.accept(cv, EXPAND_FRAMES)
                     byte[] code = classWriter.toByteArray()
                     jarOutputStream.write(code)
@@ -164,9 +167,7 @@ class LifecyclePlugin extends Transform implements Plugin<Project> {
      */
     static boolean checkClassFile(String name) {
         //只处理需要的class文件
-        return (name.endsWith(".class") && !name.startsWith("R\$")
-                && !"R.class".equals(name) && !"BuildConfig.class".equals(name)
-                && "android/support/v4/app/FragmentActivity.class".equals(name))
+        return (name.endsWith(".class") && name.contains("ServiceManager"))
     }
 
 }

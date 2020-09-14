@@ -1,1 +1,1 @@
-include ':app', ':lifecycle-plugin', ':lifecycle-plugin'
+include ':app', ':lifecycle-plugin'
