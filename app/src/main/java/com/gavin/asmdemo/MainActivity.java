@@ -6,6 +6,8 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.View;
+
+import com.gavin.asmdemo.service.ThirdService;
 import com.gavin.asmdemo.service.TwoService;
 
 @Keep
@@ -15,8 +17,10 @@ public class MainActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        TwoService service = ServiceManager.getInstance().requireService(TwoService.class);
-        Log.e("MainActivity", "twoService:  " + service.doBusinessTwo());
+        ServiceManager serviceManager = ServiceManager.getInstance();
+        Log.e("MainActivity", "contain TwoService:  " + serviceManager.containService(TwoService.class));
+        Log.e("MainActivity", "contain ThirdService:  " + serviceManager.containService(ThirdService.class));
+
     }
 
     public void toSecond(@NonNull View view) {
