@@ -2,7 +2,7 @@ package com.gavin.asmdemo.service;
 
 import com.example.service_anno.ServiceImpl;
 
-@ServiceImpl(name = ServiceNames.THIRD_SERVICE)
+@ServiceImpl(service = { ThirdService.class })
 public class ThirdServiceImpl implements ThirdService {
     @Override
     public int doBusiness1() {

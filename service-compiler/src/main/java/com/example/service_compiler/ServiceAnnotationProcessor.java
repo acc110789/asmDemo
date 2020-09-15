@@ -8,6 +8,7 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -44,28 +45,29 @@ public class ServiceAnnotationProcessor extends AbstractProcessor {
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnvironment) {
+        super.init(processingEnvironment);
+        Filer filer = processingEnv.getFiler();
+        this.messager = processingEnv.getMessager();
+
+        FileObject resource = null;
         try {
-            super.init(processingEnvironment);
-            Filer filer = processingEnv.getFiler();
-            this.messager = processingEnv.getMessager();
-
-            FileObject resource = filer.createResource(StandardLocation.CLASS_OUTPUT, "", "temp_file");
-            String classPath = resource.toUri().getPath();
-            log("anchor class path: " + classPath);
-
-            int indexOfBuild = classPath.lastIndexOf(BUILD);
-            if (indexOfBuild < 0)
-                throw new IllegalStateException(TAG + " can not find build dir from classPath: " + classPath);
-
-            String buildDir = classPath.substring(0, indexOfBuild + BUILD.length()) + File.separator;
-            File outputFile = new File(buildDir, "__service-config/service.json");
-            this.outputFile = outputFile;
-            outputFile.getParentFile().mkdirs();
-
-            if (outputFile.exists()) outputFile.delete();
-        } catch (Throwable th) {
-            throw new IllegalStateException("should not happen");
+            resource = filer.createResource(StandardLocation.CLASS_OUTPUT, "", "temp_file");
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
         }
+        String classPath = resource.toUri().getPath();
+        log("anchor class path: " + classPath);
+
+        int indexOfBuild = classPath.lastIndexOf(BUILD);
+        if (indexOfBuild < 0)
+            throw new IllegalStateException(TAG + " can not find build dir from classPath: " + classPath);
+
+        String buildDir = classPath.substring(0, indexOfBuild + BUILD.length()) + File.separator;
+        File outputFile = new File(buildDir, "__service-config/service.json");
+        this.outputFile = outputFile;
+        outputFile.getParentFile().mkdirs();
+
+        if (outputFile.exists()) outputFile.delete();
     }
 
     @Override
@@ -95,9 +97,7 @@ public class ServiceAnnotationProcessor extends AbstractProcessor {
             json.put(IMPL, serviceImplNameList);
         }
 
-        if (json.isEmpty()) {
-            return true;
-        }
+        if (json.isEmpty()) return true;
 
         String result = json.toString();
         File outputFile = this.outputFile;
