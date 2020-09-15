@@ -35,6 +35,8 @@ class SettingManagerTransform extends Transform {
 
     private Map<String, SettingPair> finalSettingPairs = new HashMap<>();
 
+    private byte[] settingManagerClassBytes = null;
+
     public SettingManagerTransform(Project project) {
         this.collector = new ServiceCollector(project);
     }
@@ -78,11 +80,12 @@ class SettingManagerTransform extends Transform {
         //删除之前的输出
         if (outputProvider != null) outputProvider.deleteAll();
 
+        File lastDirectoryDest = null;
         //遍历inputs
         for (TransformInput input : inputs) {
             //遍历directoryInputs
             for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
-                handleDirectoryInput(directoryInput, outputProvider);
+                lastDirectoryDest = handleDirectoryInput(directoryInput, outputProvider);
             }
 
             //遍历jarInputs
@@ -90,6 +93,8 @@ class SettingManagerTransform extends Transform {
                 handleJarInputs(jarInput, outputProvider);
             }
         }
+
+        rewriteSettingManager(lastDirectoryDest);
 
         logFinalSettingPair();
 
@@ -102,10 +107,49 @@ class SettingManagerTransform extends Transform {
         Logger.log("finalSettingPairs:  " + finalSettingPairs);
     }
 
+    private void rewriteSettingManager(File destination) throws IOException {
+        byte[] bytes = settingManagerClassBytes;
+        if (bytes == null) return;
+
+        ClassReader classReader = new ClassReader(bytes);
+        //rawClassName:  com/example/gavin/asmdemo/service/SettingManager
+        String rawClassName = classReader.getClassName();
+        String filePath = rawClassName;
+        if (!"/".equals(File.separator)) {
+            filePath = rawClassName.replace("/", File.separator);
+        }
+        filePath = filePath + ".class";
+        File file = new File(destination, filePath);
+        file.getParentFile().mkdirs();
+        if (file.exists()) file.delete();
+
+        ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_MAXS);
+
+        Set<SettingPair> settingPairs = getValidSettingPair();
+        ClassVisitor classVisitor = new SettingManagerClassVisitor(classWriter, settingPairs);
+        classReader.accept(classVisitor, EXPAND_FRAMES);
+        byte[] code = classWriter.toByteArray();
+        FileOutputStream fos = new FileOutputStream(file);
+        fos.write(code);
+        fos.close();
+    }
+
+    private Set<SettingPair> getValidSettingPair() {
+        Set<SettingPair> result = new HashSet<>();
+        for (SettingPair settingPair : finalSettingPairs.values()) {
+            String implName = settingPair.implName;
+            if (implName == null || implName.isEmpty()) continue;
+            String interfaceName = settingPair.interfaceName;
+            if (interfaceName == null || interfaceName.isEmpty()) continue;
+            result.add(settingPair);
+        }
+        return result;
+    }
+
     /**
      * 处理文件目录下的class文件
      */
-    void handleDirectoryInput(DirectoryInput directoryInput, TransformOutputProvider outputProvider) throws IOException {
+    File handleDirectoryInput(DirectoryInput directoryInput, TransformOutputProvider outputProvider) throws IOException {
         File parent = directoryInput.getFile();
         Logger.log("----------- directory parent file <" + parent.getAbsolutePath() + "> -----------");
 
@@ -130,6 +174,7 @@ class SettingManagerTransform extends Transform {
                 directoryInput.getContentTypes(), directoryInput.getScopes(),
                 Format.DIRECTORY);
         FileUtils.copyDirectory(directoryInput.getFile(), dest);
+        return dest;
     }
 
     /**
@@ -158,7 +203,8 @@ class SettingManagerTransform extends Transform {
                 ZipEntry zipEntry = new ZipEntry(entryName);
                 InputStream inputStream = jarFile.getInputStream(jarEntry);
                 //插桩class
-                if (checkSimpleClassName(getSimpleClassNameForJarEntryName(entryName))) {
+                String simpleClassName = getSimpleClassNameForJarEntryName(entryName);
+                if (checkSimpleClassName(simpleClassName)) {
                     //class文件处理
                     Logger.log("----------- deal with jar class file <" + entryName + "> -----------");
                     jarOutputStream.putNextEntry(zipEntry);
@@ -174,6 +220,22 @@ class SettingManagerTransform extends Transform {
 //                    jarOutputStream.write(code);
 
                     jarOutputStream.write(bytes);
+                } else if(getSettingManagerSimpleClassName().equals(simpleClassName)) {
+                    Logger.log("----------- deal with jar class file settingManager <" + entryName + "> -----------");
+
+                    byte[] bytes = IOUtils.toByteArray(inputStream);
+                    ClassReader classReader = new ClassReader(bytes);
+                    String rawClassName = classReader.getClassName();
+                    String className = rawClassName.replace("/", ".");
+
+                    if (!getSettingManagerFullName().equals(className)) {
+                        jarOutputStream.putNextEntry(zipEntry);
+                        jarOutputStream.write(bytes);
+                    } else {
+                        //记录下来，后面会改SettingManager.class文件
+                        settingManagerClassBytes = bytes;
+                    }
+
                 } else {
                     jarOutputStream.putNextEntry(zipEntry);
                     jarOutputStream.write(IOUtils.toByteArray(inputStream));
@@ -199,6 +261,14 @@ class SettingManagerTransform extends Transform {
     private boolean checkSimpleClassName(String name) {
         //只处理需要的class文件
         return name.endsWith(".class") && configSimpleClassNameSet.contains(name);
+    }
+
+    private String getSettingManagerSimpleClassName() {
+        return "ServiceManager.class";
+    }
+
+    private String getSettingManagerFullName() {
+        return "com.gavin.asmdemo.ServiceManager";
     }
 
 //    private void handleSettingManagerClass() {

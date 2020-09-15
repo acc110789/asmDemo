@@ -4,6 +4,8 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+import java.util.Set;
+
 /**
  * @author gavin
  * @date 2019/2/18
@@ -12,9 +14,11 @@ import org.objectweb.asm.Opcodes;
 public class SettingManagerClassVisitor extends ClassVisitor implements Opcodes {
 
     private String mClassName;
+    private Set<SettingPair> mSettingPairs;
 
-    public SettingManagerClassVisitor(ClassVisitor cv) {
+    public SettingManagerClassVisitor(ClassVisitor cv, Set<SettingPair> settingPairSet) {
         super(Opcodes.ASM5, cv);
+        this.mSettingPairs = settingPairSet;
     }
 
     @Override
@@ -31,7 +35,7 @@ public class SettingManagerClassVisitor extends ClassVisitor implements Opcodes 
             if ("<init>".equals(name) ) {
                 //处理onCreate
                 System.out.println("SettingManagerClassVisitor : change method ----> " + name);
-                return new SettingsManagerConstructorMethodVisitor(mv);
+                return new SettingsManagerConstructorMethodVisitor(mv, mSettingPairs);
             }
         }
         return mv;
