@@ -1,3 +1,4 @@
+include ':service-compiler'
 include ':service-anno'
 include ':project-mode'
 include ':service'
