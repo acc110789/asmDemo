@@ -2,10 +2,11 @@ package com.example.service_compiler;
 
 import com.example.service_anno.ServiceImpl;
 import com.google.auto.service.AutoService;
+
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
@@ -33,11 +34,22 @@ public class ServiceAnnotationProcessor extends AbstractProcessor {
 
     private static String TAG = "ServiceAnnotationProcessor";
     private static String BUILD = "build";
-    private static String INTERFACE = "interface";
-    private static String IMPL = "impl";
+    private static String SERVICE_IMPL_METHOD_NAME = "service()";
 
     private Messager messager;
     private File outputFile;
+
+    @Override
+    public Set<String> getSupportedAnnotationTypes() {
+        Set<String> types = new HashSet<>();
+        types.add(ServiceImpl.class.getCanonicalName());
+        return types;
+    }
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latestSupported();
+    }
 
     private void log(String msg) {
         if (msg.isEmpty()) return;
@@ -74,23 +86,38 @@ public class ServiceAnnotationProcessor extends AbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> set, RoundEnvironment roundEnvironment) {
         Set<? extends Element> serviceImplElements = roundEnvironment.getElementsAnnotatedWith(ServiceImpl.class);
+        JSONObject json = getAnnotationInfo(serviceImplElements);
+        if (json.isEmpty()) return true;
 
+        JSONObject existJson;
+        try {
+            existJson = Utils.getExistAnnotationInfo(outputFile);
+            if (existJson != null) json = Utils.mergeJson(json, existJson);
+            Utils.writeJSONObjectToFile(json, outputFile);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+        return true;
+    }
+
+    @NotNull
+    private JSONObject getAnnotationInfo(Set<? extends Element> serviceImplElements) {
         JSONObject json = new JSONObject();
         for (Element element : serviceImplElements) {
             TypeElement typeElement = (TypeElement) element;
             List<? extends AnnotationMirror> annotationMirrors = typeElement.getAnnotationMirrors();
             for (AnnotationMirror mirror : annotationMirrors) {
                 Map<? extends ExecutableElement, ? extends AnnotationValue> elementValues = mirror.getElementValues();
-                for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry: elementValues.entrySet()) {
+                for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : elementValues.entrySet()) {
                     String key = entry.getKey().toString();
-                    if (!"service()".equals(key)) continue;
+                    if (!SERVICE_IMPL_METHOD_NAME.equals(key)) continue;
 
-                    String generalClassName = removeClassPostfix(entry.getValue().toString());
+                    String generalClassName = Utils.removeClassPostfix(entry.getValue().toString());
                     Object value = entry.getValue().getValue();
                     if (value instanceof Iterable) {
                         Iterable iterable = (Iterable) value;
                         for (Object one : iterable) {
-                            String className = removeClassPostfix(one.toString());
+                            String className = Utils.removeClassPostfix(one.toString());
                             json.put(className, typeElement.getQualifiedName().toString());
                         }
                     } else {
@@ -99,40 +126,6 @@ public class ServiceAnnotationProcessor extends AbstractProcessor {
                 }
             }
         }
-        if (json.isEmpty()) return true;
-
-        String result = json.toString();
-        File outputFile = this.outputFile;
-        try {
-            if (outputFile != null) {
-                FileOutputStream outputStream = new FileOutputStream(outputFile);
-                outputStream.write(result.getBytes());
-                outputStream.flush();
-                outputStream.close();
-            }
-        } catch (Throwable th) {
-            throw new IllegalStateException(th);
-        }
-        return true;
-    }
-
-    private String removeClassPostfix(String raw) {
-        if (raw == null) return null;
-        if (raw.endsWith(".class")) {
-            return raw.substring(0, raw.length() - 6);
-        }
-        return raw;
-    }
-
-    @Override
-    public Set<String> getSupportedAnnotationTypes() {
-        Set<String> types = new HashSet<>();
-        types.add(ServiceImpl.class.getCanonicalName());
-        return types;
-    }
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latestSupported();
+        return json;
     }
 }
