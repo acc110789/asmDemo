@@ -1,7 +1,6 @@
 package com.example.plugin.service
 
 import com.android.build.gradle.AppExtension
-import com.example.plugin.service.ServiceTransform
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 

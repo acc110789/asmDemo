@@ -21,6 +21,8 @@ public class MainActivity extends BaseActivity {
         Log.e("MainActivity", "contain TwoService:  " + serviceManager.containService(TwoService.class));
         Log.e("MainActivity", "contain ThirdService:  " + serviceManager.containService(ThirdService.class));
 
+        new com.gavin.asmdemo.test.ServiceManager().setHello();
+
     }
 
     public void toSecond(@NonNull View view) {
