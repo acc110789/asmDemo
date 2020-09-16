@@ -12,6 +12,7 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,6 +26,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import static com.example.plugin.service.Constants.JAR_POSTFIX;
 import static com.example.plugin.service.Constants.SERVICE_MANAGER_FULL_NAME;
@@ -44,6 +46,7 @@ class ServiceTransform extends Transform {
     private Map<String, String> finalServicePairs = new HashMap<>();
 
     private byte[] serviceManagerClassBytes = null;
+    private boolean findServiceManager = false;
 
     public ServiceTransform(Project project) {
         this.collector = new ServiceCollector(project);
@@ -97,7 +100,7 @@ class ServiceTransform extends Transform {
             }
         }
 
-        generateServiceManagerClass(lastDirectoryDest);
+        if (findServiceManager) generateServiceManagerClass(lastDirectoryDest);
         logFinalServicePair();
 
         long cost = (System.currentTimeMillis() - startTime) / 1000;
@@ -111,7 +114,9 @@ class ServiceTransform extends Transform {
 
     private void generateServiceManagerClass(File destination) throws IOException {
         byte[] bytes = serviceManagerClassBytes;
-        if (bytes == null) return;
+        if (bytes == null) {
+            throw new IllegalStateException("find ServiceManager but no serviceManagerClassBytes found");
+        }
 
         ClassReader classReader = new ClassReader(bytes);
         //rawClassName:  com/example/gavin/asmdemo/service/SettingManager
@@ -140,7 +145,7 @@ class ServiceTransform extends Transform {
 
     private Set<ServicePair> getValidServicePair() {
         Set<ServicePair> result = new HashSet<>();
-        for (Map.Entry<String,String> entry : finalServicePairs.entrySet()) {
+        for (Map.Entry<String, String> entry : finalServicePairs.entrySet()) {
             String implName = entry.getKey();
             if (implName == null || implName.isEmpty()) continue;
             String interfaceName = entry.getValue();
@@ -175,75 +180,69 @@ class ServiceTransform extends Transform {
     }
 
     private void handleJarInputs(JarInput jarInput, TransformOutputProvider outputProvider) throws IOException {
-        boolean isJar = jarInput.getFile().getAbsolutePath().endsWith(JAR_POSTFIX);
-        if (!isJar) return;
-
         String jarName = jarInput.getName();
-        String md5Name = DigestUtils.md5Hex(jarInput.getFile().getAbsolutePath());
-        if (jarName.endsWith(JAR_POSTFIX)) jarName = jarName.substring(0, jarName.length() - 4);
-
-        File tmpFile = new File(jarInput.getFile().getParent() + File.separator + TMP_JAR_FILE_NAME);
-        if (tmpFile.exists()) tmpFile.delete();
-
-        JarFile jarFile = new JarFile(jarInput.getFile());
-        JarOutputStream jarOutputStream = new JarOutputStream(new FileOutputStream(tmpFile));
-
-        try {
-            Enumeration<JarEntry> enumeration = jarFile.entries();
-            while (enumeration.hasMoreElements()) {
-                JarEntry jarEntry = enumeration.nextElement();
-                String entryName = jarEntry.getName();
-                ZipEntry zipEntry = new ZipEntry(entryName);
-                InputStream inputStream = jarFile.getInputStream(jarEntry);
-                String simpleClassName = Utils.getSimpleClassNameForJarEntryName(entryName);
-
-                boolean handled = false;
-
-                //检查是否是ServiceImpl的class，如果是则记录下来
-                boolean isServiceClassBySimpleName = isServiceBySimpleClassName(simpleClassName);
-                if (isServiceClassBySimpleName) {
-                    jarOutputStream.putNextEntry(zipEntry);
-                    byte[] bytes = IOUtils.toByteArray(inputStream);
-                    jarOutputStream.write(bytes);
-                    checkDetailClassName(bytes);
-                    handled = true;
-                }
-
-                //如果是ServiceManager，则记录其字节码之后踢出
-                if (SERVICE_MANAGER_SIMPLE_CLASS_NAME.equals(simpleClassName)) {
-                    byte[] bytes = IOUtils.toByteArray(inputStream);
-                    ClassReader classReader = new ClassReader(bytes);
-                    String rawClassName = classReader.getClassName();
-                    String className = rawClassName.replace("/", ".");
-                    if (SERVICE_MANAGER_FULL_NAME.equals(className)) {
-                        serviceManagerClassBytes = bytes;
-                    } else {
-                        jarOutputStream.putNextEntry(zipEntry);
-                        jarOutputStream.write(bytes);
-                    }
-                    handled = true;
-                }
-
-                if (!handled) {
-                    jarOutputStream.putNextEntry(zipEntry);
-                    jarOutputStream.write(IOUtils.toByteArray(inputStream));
-                }
-                jarOutputStream.closeEntry();
-            }
-        } finally {
-            jarOutputStream.close();
-            jarFile.close();
+        String path = jarInput.getFile().getAbsolutePath();
+        String md5Name = DigestUtils.md5Hex(path);
+        if (jarName.endsWith(".jar")) {
+            jarName = jarName.substring(0, jarName.length() - 4);
         }
-
-        File dest = outputProvider.getContentLocation(jarName + md5Name,
-                jarInput.getContentTypes(), jarInput.getScopes(), Format.JAR);
-        FileUtils.copyFile(tmpFile, dest);
-        tmpFile.delete();
+        File outputFile = outputProvider.getContentLocation(jarName + md5Name, jarInput.getContentTypes(),
+                jarInput.getScopes(), Format.JAR);
+        File inputFile = jarInput.getFile();
+        boolean containServiceManager = parseJarInfo(inputFile.getAbsolutePath());
+        if (containServiceManager) {
+            findServiceManager = true;
+        }
+        if (!containServiceManager) {
+            //整体拷贝
+            FileUtils.copyFile(inputFile, outputFile);
+        } else {
+            //不能整体拷贝，需要踢出ServiceManager
+            serviceManagerClassBytes = Utils.copyJar(jarInput, outputFile, SERVICE_MANAGER_FULL_NAME);
+        }
     }
 
+    private boolean parseJarInfo(String path) throws IOException {
+        boolean containServiceManager = false;
+        ZipInputStream zipInputStream = null;
+        ZipEntry e;
+        try {
+            zipInputStream = new ZipInputStream(new FileInputStream(path));
+            while ((e = zipInputStream.getNextEntry()) != null) {
+                String name = e.getName();
+                String className = Utils.getClassName(name);
+                if (className == null) {
+                    continue;
+                }
+                String realClassName = className.replace('/', '.');
+
+                checkDetailClassName(realClassName);
+
+                if (SERVICE_MANAGER_FULL_NAME.equals(realClassName)) {
+
+                    containServiceManager = true;
+                    Logger.log(" find ServiceManager");
+                }
+            }
+        } catch (Throwable th) {
+            throw new IllegalStateException(th);
+        } finally {
+            if (zipInputStream != null) {
+                zipInputStream.close();
+            }
+        }
+        return containServiceManager;
+    }
 
     private boolean isServiceBySimpleClassName(String name) {
         return name.endsWith(".class") && implServiceSimpleClassNameSet.contains(name);
+    }
+
+    private void checkDetailClassName(String className) {
+        if (className == null) return;
+        if (kaptServiceMap.containsKey(className)) {
+            this.finalServicePairs.put(className, kaptServiceMap.get(className));
+        }
     }
 
     private void checkDetailClassName(byte[] bytes) {
