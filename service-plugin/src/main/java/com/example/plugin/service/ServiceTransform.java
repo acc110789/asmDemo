@@ -25,15 +25,23 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
+
+import static com.example.plugin.service.Constants.JAR_POSTFIX;
+import static com.example.plugin.service.Constants.SERVICE_MANAGER_FULL_NAME;
+import static com.example.plugin.service.Constants.SERVICE_MANAGER_SIMPLE_CLASS_NAME;
+import static com.example.plugin.service.Constants.TMP_JAR_FILE_NAME;
 import static org.objectweb.asm.ClassReader.EXPAND_FRAMES;
 
 class ServiceTransform extends Transform {
 
     private ServiceCollector collector;
-    private Map<String, SettingPair> kaptSettingPairs = new HashMap<>();
-    private Set<String> configSimpleClassNameSet = new HashSet<>();
 
-    private Map<String, SettingPair> finalSettingPairs = new HashMap<>();
+    //通过kapt收集到的所有Service和ServiceImpl信息,
+    //key: Impl, value: Interface
+    private Map<String, String> kaptServiceMap = new HashMap<>();
+    private Set<String> implServiceSimpleClassNameSet = new HashSet<>();
+
+    private Map<String, String> finalServicePairs = new HashMap<>();
 
     private byte[] settingManagerClassBytes = null;
 
@@ -64,50 +72,44 @@ class ServiceTransform extends Transform {
     @Override
     public void transform(@NonNull TransformInvocation transformInvocation) throws IOException {
         long startTime = System.currentTimeMillis();
-        Logger.log("--------------- LifecyclePlugin visit start --------------- ");
+        Logger.log("---------------visit start --------------- ");
 
-        kaptSettingPairs.clear();
-        Map<String, SettingPair> configSettingPair = collector.collectSettingPair();
-        this.kaptSettingPairs.putAll(configSettingPair);
-        Logger.log("kaptSettingPairs: " + kaptSettingPairs);
+        this.kaptServiceMap.clear();
+        Map<String, String> kaptServiceMap = collector.getAllServicePair();
+        this.kaptServiceMap.putAll(kaptServiceMap);
+        Logger.log("kaptServicePairs: " + this.kaptServiceMap);
 
-        configSimpleClassNameSet.clear();
-        configSimpleClassNameSet.addAll(Utils.getSimpleClassNameSet(configSettingPair));
-        Logger.log("configSimpleClassNameSet: " + configSimpleClassNameSet);
+        implServiceSimpleClassNameSet.clear();
+        implServiceSimpleClassNameSet.addAll(Utils.getImplSimpleClassNameSet(kaptServiceMap));
+        Logger.log("kaptSimpleClassNameSet: " + implServiceSimpleClassNameSet);
 
         Collection<TransformInput> inputs = transformInvocation.getInputs();
         TransformOutputProvider outputProvider = transformInvocation.getOutputProvider();
-        //删除之前的输出
         if (outputProvider != null) outputProvider.deleteAll();
 
         File lastDirectoryDest = null;
-        //遍历inputs
         for (TransformInput input : inputs) {
-            //遍历directoryInputs
             for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
                 lastDirectoryDest = handleDirectoryInput(directoryInput, outputProvider);
             }
-
-            //遍历jarInputs
             for (JarInput jarInput : input.getJarInputs()) {
                 handleJarInputs(jarInput, outputProvider);
             }
         }
 
-        rewriteSettingManager(lastDirectoryDest);
-
-        logFinalSettingPair();
+        generateServiceManagerClass(lastDirectoryDest);
+        logFinalServicePair();
 
         long cost = (System.currentTimeMillis() - startTime) / 1000;
-        Logger.log("--------------- LifecyclePlugin visit end --------------- ");
-        Logger.log("LifecyclePlugin cost ： " + cost + " s");
+        Logger.log("---------------visit end ----------------- ");
+        Logger.log(" cost ： " + cost + " s");
     }
 
-    private void logFinalSettingPair() {
-        Logger.log("finalSettingPairs:  " + finalSettingPairs);
+    private void logFinalServicePair() {
+        Logger.log("finalServicePairs:  " + finalServicePairs);
     }
 
-    private void rewriteSettingManager(File destination) throws IOException {
+    private void generateServiceManagerClass(File destination) throws IOException {
         byte[] bytes = settingManagerClassBytes;
         if (bytes == null) return;
 
@@ -124,24 +126,26 @@ class ServiceTransform extends Transform {
         if (file.exists()) file.delete();
 
         ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_MAXS);
-
-        Set<SettingPair> settingPairs = getValidSettingPair();
-        ClassVisitor classVisitor = new SettingManagerClassVisitor(classWriter, settingPairs);
+        Set<ServicePair> servicePairs = getValidServicePair();
+        ClassVisitor classVisitor = new ServiceManagerClassVisitor(classWriter, servicePairs);
         classReader.accept(classVisitor, EXPAND_FRAMES);
         byte[] code = classWriter.toByteArray();
         FileOutputStream fos = new FileOutputStream(file);
-        fos.write(code);
-        fos.close();
+        try {
+            fos.write(code);
+        } finally {
+            fos.close();
+        }
     }
 
-    private Set<SettingPair> getValidSettingPair() {
-        Set<SettingPair> result = new HashSet<>();
-        for (SettingPair settingPair : finalSettingPairs.values()) {
-            String implName = settingPair.implName;
+    private Set<ServicePair> getValidServicePair() {
+        Set<ServicePair> result = new HashSet<>();
+        for (Map.Entry<String,String> entry : finalServicePairs.entrySet()) {
+            String implName = entry.getKey();
             if (implName == null || implName.isEmpty()) continue;
-            String interfaceName = settingPair.interfaceName;
+            String interfaceName = entry.getValue();
             if (interfaceName == null || interfaceName.isEmpty()) continue;
-            result.add(settingPair);
+            result.add(new ServicePair(implName, interfaceName));
         }
         return result;
     }
@@ -151,21 +155,14 @@ class ServiceTransform extends Transform {
      */
     File handleDirectoryInput(DirectoryInput directoryInput, TransformOutputProvider outputProvider) throws IOException {
         File parent = directoryInput.getFile();
-        Logger.log("----------- directory parent file <" + parent.getAbsolutePath() + "> -----------");
-
-        //是否是目录
         if (parent.isDirectory()) {
-            //列出目录所有文件（包含子文件夹，子文件夹内文件）
             Utils.eachFileRecurse(parent, new FileHandler() {
                 @Override
                 public void handleFile(File file) throws IOException {
                     String name = file.getName();
-                    if (!checkSimpleClassName(name)) return;
-
+                    if (!isServiceBySimpleClassName(name)) return;
                     byte[] bytes = Utils.getBytes(file);
                     checkDetailClassName(bytes);
-
-//                    handleSettingManagerClass();
                 }
             });
         }
@@ -177,143 +174,86 @@ class ServiceTransform extends Transform {
         return dest;
     }
 
-    /**
-     * 处理Jar中的class文件
-     */
-    void handleJarInputs(JarInput jarInput, TransformOutputProvider outputProvider) throws IOException {
-        if (jarInput.getFile().getAbsolutePath().endsWith(".jar")) {
-            //重名名输出文件,因为可能同名,会覆盖
-            String jarName = jarInput.getName();
-            String md5Name = DigestUtils.md5Hex(jarInput.getFile().getAbsolutePath());
-            if (jarName.endsWith(".jar")) {
-                jarName = jarName.substring(0, jarName.length() - 4);
-            }
-            JarFile jarFile = new JarFile(jarInput.getFile());
-            Enumeration enumeration = jarFile.entries();
-            File tmpFile = new File(jarInput.getFile().getParent() + File.separator + "classes_temp.jar");
-            //避免上次的缓存被重复插入
-            if (tmpFile.exists()) {
-                tmpFile.delete();
-            }
-            JarOutputStream jarOutputStream = new JarOutputStream(new FileOutputStream(tmpFile));
-            //用于保存
+    private void handleJarInputs(JarInput jarInput, TransformOutputProvider outputProvider) throws IOException {
+        boolean isJar = jarInput.getFile().getAbsolutePath().endsWith(JAR_POSTFIX);
+        if (!isJar) return;
+
+        String jarName = jarInput.getName();
+        String md5Name = DigestUtils.md5Hex(jarInput.getFile().getAbsolutePath());
+        if (jarName.endsWith(JAR_POSTFIX)) jarName = jarName.substring(0, jarName.length() - 4);
+
+        File tmpFile = new File(jarInput.getFile().getParent() + File.separator + TMP_JAR_FILE_NAME);
+        if (tmpFile.exists()) tmpFile.delete();
+
+        JarFile jarFile = new JarFile(jarInput.getFile());
+        JarOutputStream jarOutputStream = new JarOutputStream(new FileOutputStream(tmpFile));
+
+        try {
+            Enumeration<JarEntry> enumeration = jarFile.entries();
             while (enumeration.hasMoreElements()) {
-                JarEntry jarEntry = (JarEntry) enumeration.nextElement();
+                JarEntry jarEntry = enumeration.nextElement();
                 String entryName = jarEntry.getName();
                 ZipEntry zipEntry = new ZipEntry(entryName);
                 InputStream inputStream = jarFile.getInputStream(jarEntry);
-                //插桩class
-                String simpleClassName = getSimpleClassNameForJarEntryName(entryName);
-                if (checkSimpleClassName(simpleClassName)) {
-                    //class文件处理
-                    Logger.log("----------- deal with jar class file <" + entryName + "> -----------");
+                String simpleClassName = Utils.getSimpleClassNameForJarEntryName(entryName);
+
+                boolean handled = false;
+
+                //检查是否是ServiceImpl的class，如果是则记录下来
+                boolean isServiceClassBySimpleName = isServiceBySimpleClassName(simpleClassName);
+                if (isServiceClassBySimpleName) {
                     jarOutputStream.putNextEntry(zipEntry);
                     byte[] bytes = IOUtils.toByteArray(inputStream);
-
-                    checkDetailClassName(bytes);
-
-//                    ClassReader classReader = new ClassReader(bytes);
-//                    ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_MAXS);
-//                    ClassVisitor cv = new SettingManagerClassVisitor(classWriter);
-//                    classReader.accept(cv, EXPAND_FRAMES);
-//                    byte[] code = classWriter.toByteArray();
-//                    jarOutputStream.write(code);
-
                     jarOutputStream.write(bytes);
-                } else if(getSettingManagerSimpleClassName().equals(simpleClassName)) {
-                    Logger.log("----------- deal with jar class file settingManager <" + entryName + "> -----------");
+                    checkDetailClassName(bytes);
+                    handled = true;
+                }
 
+                //如果是ServiceManager，则记录其字节码之后踢出
+                if (SERVICE_MANAGER_SIMPLE_CLASS_NAME.equals(simpleClassName)) {
                     byte[] bytes = IOUtils.toByteArray(inputStream);
                     ClassReader classReader = new ClassReader(bytes);
                     String rawClassName = classReader.getClassName();
                     String className = rawClassName.replace("/", ".");
-
-                    if (!getSettingManagerFullName().equals(className)) {
+                    if (SERVICE_MANAGER_FULL_NAME.equals(className)) {
+                        settingManagerClassBytes = bytes;
+                    } else {
                         jarOutputStream.putNextEntry(zipEntry);
                         jarOutputStream.write(bytes);
-                    } else {
-                        //记录下来，后面会改SettingManager.class文件
-                        settingManagerClassBytes = bytes;
                     }
+                    handled = true;
+                }
 
-                } else {
+                if (!handled) {
                     jarOutputStream.putNextEntry(zipEntry);
                     jarOutputStream.write(IOUtils.toByteArray(inputStream));
                 }
                 jarOutputStream.closeEntry();
             }
-            //结束
+        } finally {
             jarOutputStream.close();
             jarFile.close();
-            File dest = outputProvider.getContentLocation(jarName + md5Name,
-                    jarInput.getContentTypes(), jarInput.getScopes(), Format.JAR);
-            FileUtils.copyFile(tmpFile, dest);
-            tmpFile.delete();
         }
+
+        File dest = outputProvider.getContentLocation(jarName + md5Name,
+                jarInput.getContentTypes(), jarInput.getScopes(), Format.JAR);
+        FileUtils.copyFile(tmpFile, dest);
+        tmpFile.delete();
     }
 
-    private String getSimpleClassNameForJarEntryName(String jarEntryName) {
-        int nameDividerIndex = jarEntryName.lastIndexOf("/");
-        if (nameDividerIndex < 0) return jarEntryName;
-        return jarEntryName.substring(nameDividerIndex + 1);
+
+    private boolean isServiceBySimpleClassName(String name) {
+        return name.endsWith(".class") && implServiceSimpleClassNameSet.contains(name);
     }
-
-    private boolean checkSimpleClassName(String name) {
-        //只处理需要的class文件
-        return name.endsWith(".class") && configSimpleClassNameSet.contains(name);
-    }
-
-    private String getSettingManagerSimpleClassName() {
-        return "ServiceManager.class";
-    }
-
-    private String getSettingManagerFullName() {
-        return "com.gavin.asmdemo.ServiceManager";
-    }
-
-//    private void handleSettingManagerClass() {
-//        ClassReader classReader = new ClassReader(bytes);
-//
-//        ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_MAXS);
-//        ClassVisitor classVisitor = new SettingManagerClassVisitor(classWriter);
-//        classReader.accept(classVisitor, EXPAND_FRAMES);
-//        byte[] code = classWriter.toByteArray();
-//        FileOutputStream fos = new FileOutputStream(
-//                file.getParentFile().getAbsolutePath() + File.separator + name);
-//        fos.write(code);
-//        fos.close();
-//    }
-
 
     private void checkDetailClassName(byte[] bytes) {
         ClassReader classReader = new ClassReader(bytes);
+        //  "com/gavin/asmdemo/service/TwoService"
         String rawClassName = classReader.getClassName();
-        Logger.log("checkDetailClassName getClassName: " + rawClassName);
-        String className = rawClassName.replace("/", ".");
 
-        for (Map.Entry<String, SettingPair> entry: kaptSettingPairs.entrySet()) {
-            String key = entry.getKey();
-            SettingPair settingPair = entry.getValue();
-
-            if (settingPair.interfaceName.equals(className)) {
-                SettingPair finalSettingPair = this.finalSettingPairs.get(key);
-                if (finalSettingPair == null) {
-                    finalSettingPair = new SettingPair();
-                    this.finalSettingPairs.put(key, finalSettingPair);
-                }
-                finalSettingPair.interfaceName = className;
-
-            }
-
-            if (settingPair.implName.equals(className)) {
-                SettingPair finalSettingPair = this.finalSettingPairs.get(key);
-                if (finalSettingPair == null) {
-                    finalSettingPair = new SettingPair();
-                    this.finalSettingPairs.put(key, finalSettingPair);
-                }
-                finalSettingPair.implName = className;
-            }
+        String className = rawClassName.replace('/', '.');
+        if (kaptServiceMap.containsKey(className)) {
+            this.finalServicePairs.put(className, kaptServiceMap.get(className));
         }
-        Logger.log("checkDetailClassName finalSettingPairs: " + finalSettingPairs);
     }
 }

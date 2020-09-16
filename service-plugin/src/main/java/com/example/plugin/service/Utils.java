@@ -13,33 +13,18 @@ import java.util.Set;
 
 class Utils {
 
-    /**
-     * 从name中提取出className，
-     * 如果这个name不是className，则返回null
-     * */
-    static String getClassName(String name) {
-        int nameLength = name.length();
-        if(nameLength <= 6) {
-            return null;
-        }
-        String nameSuffix = name.substring(nameLength - 6 , nameLength);
-        if(!".class".equals(nameSuffix)) {
-            return null;
-        }
-        return name.substring(0 , nameLength - 6);
+    public static String getSimpleClassNameForJarEntryName(String jarEntryName) {
+        int nameDividerIndex = jarEntryName.lastIndexOf("/");
+        if (nameDividerIndex < 0) return jarEntryName;
+        return jarEntryName.substring(nameDividerIndex + 1);
     }
 
-    public static Set<String> getSimpleClassNameSet(Map<String, SettingPair> configSettingPair) {
+    public static Set<String> getImplSimpleClassNameSet(Map<String, String> kaptServiceMap) {
         Set<String> result = new HashSet<>();
-
-        for (SettingPair pair : configSettingPair.values()) {
-            String simpleClassName = getSimpleClassName(pair.interfaceName);
-            if (simpleClassName != null) result.add(simpleClassName);
-
-            simpleClassName = getSimpleClassName(pair.implName);
+        for (String implName : kaptServiceMap.keySet()) {
+            String simpleClassName = getSimpleClassName(implName);
             if (simpleClassName != null) result.add(simpleClassName);
         }
-
         return result;
     }
 
@@ -80,7 +65,6 @@ class Utils {
                     closure.handleFile(file);
                 }
             }
-
         }
     }
 

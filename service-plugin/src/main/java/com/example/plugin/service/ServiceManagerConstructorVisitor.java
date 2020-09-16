@@ -6,18 +6,18 @@ import org.objectweb.asm.Type;
 
 import java.util.Set;
 
+import static com.example.plugin.service.Constants.SERVICE_MANAGER_ASM_CLASS_NAME;
 import static org.objectweb.asm.Opcodes.*;
 
 /**
- * @author gavin
- * @date 2019/2/19
+ * @author luhaoyu
  */
-public class SettingsManagerConstructorMethodVisitor extends MethodVisitor {
-    private Set<SettingPair> mSettingPairs;
+public class ServiceManagerConstructorVisitor extends MethodVisitor {
+    private Set<ServicePair> mServicePairs;
 
-    public SettingsManagerConstructorMethodVisitor(MethodVisitor mv, Set<SettingPair> settingPairSet) {
+    public ServiceManagerConstructorVisitor(MethodVisitor mv, Set<ServicePair> servicePairSet) {
         super(Opcodes.ASM4, mv);
-        mSettingPairs = settingPairSet;
+        mServicePairs = servicePairSet;
     }
 
     @Override
@@ -26,8 +26,8 @@ public class SettingsManagerConstructorMethodVisitor extends MethodVisitor {
             super.visitInsn(opcode);
             return;
         }
-        for (SettingPair settingPair : mSettingPairs) {
-            add(asmName(settingPair.interfaceName) , asmName(settingPair.implName));
+        for (ServicePair servicePair : mServicePairs) {
+            add(asmName(servicePair.interfaceName) , asmName(servicePair.implName));
         }
         super.visitInsn(opcode);
     }
@@ -36,18 +36,10 @@ public class SettingsManagerConstructorMethodVisitor extends MethodVisitor {
         return rawName.replace(".", "/");
     }
 
-    private void addTwo() {
-        add("com/example/asmdemo/service/TwoService", "com/example/asmdemo/service/TwoServiceImpl");
-    }
-
-    private void addThird() {
-        add("com/example/asmdemo/service/ThirdService", "com/example/asmdemo/service/ThirdServiceImpl");
-    }
-
     private void add(String interfaceName, String implName) {
         MethodVisitor methodVisitor = mv;
         methodVisitor.visitVarInsn(ALOAD, 0);
-        methodVisitor.visitFieldInsn(GETFIELD, "com/example/asmdemo/ServiceManager", "classMap", "Ljava/util/Map;");
+        methodVisitor.visitFieldInsn(GETFIELD, SERVICE_MANAGER_ASM_CLASS_NAME, "classMap", "Ljava/util/Map;");
 //        methodVisitor.visitLdcInsn(Type.getType("L" + "com/gavin/asmdemo/service/ThirdService" + ";"));
         methodVisitor.visitLdcInsn(Type.getType("L" + interfaceName + ";"));
 //        methodVisitor.visitLdcInsn(Type.getType("Lcom/gavin/asmdemo/service/ThirdServiceImpl;"));

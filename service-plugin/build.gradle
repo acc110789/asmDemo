@@ -8,13 +8,13 @@ repositories {
 
 dependencies {
     //gradle sdk
-    compile gradleApi()
+    implementation gradleApi()
     //groovy sdk
-    compile localGroovy()
+    implementation localGroovy()
 
-    compile 'com.android.tools.build:gradle:3.1.3'
+    implementation 'com.android.tools.build:gradle:3.1.3'
 
-    compile 'net.lingala.zip4j:zip4j:1.3.2'
+    implementation 'net.lingala.zip4j:zip4j:1.3.2'
 }
 
 

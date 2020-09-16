@@ -9,14 +9,14 @@ import java.util.Set;
 /**
  * @author luhaoyu
  */
-public class SettingManagerClassVisitor extends ClassVisitor implements Opcodes {
+public class ServiceManagerClassVisitor extends ClassVisitor implements Opcodes {
 
     private String mClassName;
-    private Set<SettingPair> mSettingPairs;
+    private Set<ServicePair> mServicePairs;
 
-    public SettingManagerClassVisitor(ClassVisitor cv, Set<SettingPair> settingPairSet) {
+    public ServiceManagerClassVisitor(ClassVisitor cv, Set<ServicePair> servicePairSet) {
         super(Opcodes.ASM5, cv);
-        this.mSettingPairs = settingPairSet;
+        this.mServicePairs = servicePairSet;
     }
 
     @Override
@@ -30,7 +30,7 @@ public class SettingManagerClassVisitor extends ClassVisitor implements Opcodes 
         MethodVisitor mv = cv.visitMethod(access, name, desc, signature, exceptions);
         boolean classNameMatch = Constants.SERVICE_MANAGER_ASM_CLASS_NAME.equals(this.mClassName);
         boolean methodNameMatch = Constants.SERVICE_MANAGER_ASM_CONSTRUCTOR.equals(name);
-        if (classNameMatch && methodNameMatch) return new SettingsManagerConstructorMethodVisitor(mv, mSettingPairs);
+        if (classNameMatch && methodNameMatch) return new ServiceManagerConstructorVisitor(mv, mServicePairs);
         return mv;
     }
 }
