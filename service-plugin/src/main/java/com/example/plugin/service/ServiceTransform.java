@@ -43,7 +43,7 @@ class ServiceTransform extends Transform {
 
     private Map<String, String> finalServicePairs = new HashMap<>();
 
-    private byte[] settingManagerClassBytes = null;
+    private byte[] serviceManagerClassBytes = null;
 
     public ServiceTransform(Project project) {
         this.collector = new ServiceCollector(project);
@@ -51,7 +51,7 @@ class ServiceTransform extends Transform {
 
     @Override
     public String getName() {
-        return "LifecyclePlugin";
+        return "serviceTransform";
     }
 
     @Override
@@ -110,7 +110,7 @@ class ServiceTransform extends Transform {
     }
 
     private void generateServiceManagerClass(File destination) throws IOException {
-        byte[] bytes = settingManagerClassBytes;
+        byte[] bytes = serviceManagerClassBytes;
         if (bytes == null) return;
 
         ClassReader classReader = new ClassReader(bytes);
@@ -216,7 +216,7 @@ class ServiceTransform extends Transform {
                     String rawClassName = classReader.getClassName();
                     String className = rawClassName.replace("/", ".");
                     if (SERVICE_MANAGER_FULL_NAME.equals(className)) {
-                        settingManagerClassBytes = bytes;
+                        serviceManagerClassBytes = bytes;
                     } else {
                         jarOutputStream.putNextEntry(zipEntry);
                         jarOutputStream.write(bytes);
