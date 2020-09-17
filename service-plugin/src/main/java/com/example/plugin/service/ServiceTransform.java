@@ -39,7 +39,7 @@ class ServiceTransform extends Transform {
     private final Project mProject;
 
     //通过kapt收集到的所有Service和ServiceImpl信息,
-    //key: Impl, value: Interface
+    //key: Interface, value: Impl
     private Map<String, String> kaptServiceMap = new HashMap<>();
     private Set<String> implServiceSimpleClassNameSet = new HashSet<>();
 

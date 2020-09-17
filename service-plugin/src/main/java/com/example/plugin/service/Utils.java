@@ -55,6 +55,13 @@ class Utils {
                 Object value = entry.getValue();
                 if (!(value instanceof String)) continue;
 
+                String interfaceName = entry.getKey();
+                String implName = (String) value;
+                if (result.containsKey(interfaceName)) {
+                    String serviceNameInfo = " with same service: " + interfaceName;
+                    String serviceImplInfo = " serviceImplName: " + result.get(interfaceName) + " and " + implName;
+                    throw new IllegalStateException("contains duplicated ServiceImpl !!!,  "  + serviceImplInfo + serviceNameInfo );
+                }
                 result.put(entry.getKey(), (String) value);
             }
         }

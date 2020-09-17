@@ -93,7 +93,7 @@ public class ServiceAnnotationProcessor extends AbstractProcessor {
         JSONObject existJson;
         try {
             existJson = Utils.getExistAnnotationInfo(outputFile);
-            if (existJson != null) json = Utils.mergeJson(json, existJson);
+            if (existJson != null) json = Utils.mergeJson(json, existJson, messager);
             Utils.writeJSONObjectToFile(json, outputFile);
         } catch (IOException e) {
             throw new IllegalStateException(e);
@@ -119,10 +119,10 @@ public class ServiceAnnotationProcessor extends AbstractProcessor {
                         Iterable iterable = (Iterable) value;
                         for (Object one : iterable) {
                             String className = Utils.removeClassPostfix(one.toString());
-                            json.put(className, typeElement.getQualifiedName().toString());
+                            Utils.putToJSON(json, className, typeElement.getQualifiedName().toString(), messager);
                         }
                     } else {
-                        json.put(generalClassName, typeElement.getQualifiedName().toString());
+                        Utils.putToJSON(json, generalClassName, typeElement.getQualifiedName().toString(), messager);
                     }
                 }
             }
