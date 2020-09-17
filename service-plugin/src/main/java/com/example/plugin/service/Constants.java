@@ -13,4 +13,6 @@ class Constants {
 
     public static final String SERVICE_MANAGER_SIMPLE_CLASS_NAME = "ServiceManager.class";
     public static final String SERVICE_MANAGER_FULL_NAME = "com.gavin.asmdemo.ServiceManager";
+
+    public static String SERVICE_JSON_PATH = "__service-config/service.json";
 }

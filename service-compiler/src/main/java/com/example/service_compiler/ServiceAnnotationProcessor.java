@@ -35,6 +35,7 @@ public class ServiceAnnotationProcessor extends AbstractProcessor {
     private static String TAG = "ServiceAnnotationProcessor";
     private static String BUILD = "build";
     private static String SERVICE_IMPL_METHOD_NAME = "service()";
+    private static String SERVICE_JSON_PATH = "__service-config/service.json";
 
     private Messager messager;
     private File outputFile;
@@ -76,7 +77,7 @@ public class ServiceAnnotationProcessor extends AbstractProcessor {
             throw new IllegalStateException(TAG + " can not find build dir from classPath: " + classPath);
 
         String buildDir = classPath.substring(0, indexOfBuild + BUILD.length()) + File.separator;
-        File outputFile = new File(buildDir, "__service-config/service.json");
+        File outputFile = new File(buildDir, SERVICE_JSON_PATH);
         this.outputFile = outputFile;
         outputFile.getParentFile().mkdirs();
 

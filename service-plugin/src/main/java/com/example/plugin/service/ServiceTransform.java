@@ -36,7 +36,7 @@ import static org.objectweb.asm.ClassReader.EXPAND_FRAMES;
 
 class ServiceTransform extends Transform {
 
-    private ServiceCollector collector;
+    private final Project mProject;
 
     //通过kapt收集到的所有Service和ServiceImpl信息,
     //key: Impl, value: Interface
@@ -49,7 +49,7 @@ class ServiceTransform extends Transform {
     private boolean findServiceManager = false;
 
     public ServiceTransform(Project project) {
-        this.collector = new ServiceCollector(project);
+        this.mProject = project;
     }
 
     @Override
@@ -78,7 +78,7 @@ class ServiceTransform extends Transform {
         Logger.log("---------------visit start --------------- ");
 
         this.kaptServiceMap.clear();
-        Map<String, String> kaptServiceMap = collector.getAllServicePair();
+        Map<String, String> kaptServiceMap = Utils.getAllServicePair(mProject);
         this.kaptServiceMap.putAll(kaptServiceMap);
         Logger.log("kaptServicePairs: " + this.kaptServiceMap);
 
@@ -146,9 +146,9 @@ class ServiceTransform extends Transform {
     private Set<ServicePair> getValidServicePair() {
         Set<ServicePair> result = new HashSet<>();
         for (Map.Entry<String, String> entry : finalServicePairs.entrySet()) {
-            String implName = entry.getKey();
+            String implName = entry.getValue();
             if (implName == null || implName.isEmpty()) continue;
-            String interfaceName = entry.getValue();
+            String interfaceName = entry.getKey();
             if (interfaceName == null || interfaceName.isEmpty()) continue;
             result.add(new ServicePair(implName, interfaceName));
         }
@@ -161,14 +161,11 @@ class ServiceTransform extends Transform {
     File handleDirectoryInput(DirectoryInput directoryInput, TransformOutputProvider outputProvider) throws IOException {
         File parent = directoryInput.getFile();
         if (parent.isDirectory()) {
-            Utils.eachFileRecurse(parent, new FileHandler() {
-                @Override
-                public void handleFile(File file) throws IOException {
-                    String name = file.getName();
-                    if (!isServiceBySimpleClassName(name)) return;
-                    byte[] bytes = Utils.getBytes(file);
-                    checkDetailClassName(bytes);
-                }
+            Utils.eachFileRecurse(parent, file -> {
+                String name = file.getName();
+                if (!isServiceBySimpleClassName(name)) return;
+                byte[] bytes = Utils.getBytes(file);
+                checkDetailClassName(bytes);
             });
         }
         //处理完输入文件之后，要把输出给下一个任务
@@ -219,7 +216,6 @@ class ServiceTransform extends Transform {
                 checkDetailClassName(realClassName);
 
                 if (SERVICE_MANAGER_FULL_NAME.equals(realClassName)) {
-
                     containServiceManager = true;
                     Logger.log(" find ServiceManager");
                 }
@@ -235,13 +231,17 @@ class ServiceTransform extends Transform {
     }
 
     private boolean isServiceBySimpleClassName(String name) {
-        return name.endsWith(".class") && implServiceSimpleClassNameSet.contains(name);
+        return name != null && name.endsWith(".class") && implServiceSimpleClassNameSet.contains(name);
     }
 
     private void checkDetailClassName(String className) {
         if (className == null) return;
-        if (kaptServiceMap.containsKey(className)) {
-            this.finalServicePairs.put(className, kaptServiceMap.get(className));
+
+        for (Map.Entry<String, String> entry: kaptServiceMap.entrySet()) {
+            String impName = entry.getValue();
+            if (className.equals(impName)) {
+                this.finalServicePairs.put(entry.getKey(), entry.getValue());
+            }
         }
     }
 
@@ -249,10 +249,13 @@ class ServiceTransform extends Transform {
         ClassReader classReader = new ClassReader(bytes);
         //  "com/gavin/asmdemo/service/TwoService"
         String rawClassName = classReader.getClassName();
+        String realClassName = rawClassName.replace('/', '.');
 
-        String className = rawClassName.replace('/', '.');
-        if (kaptServiceMap.containsKey(className)) {
-            this.finalServicePairs.put(className, kaptServiceMap.get(className));
+        for (Map.Entry<String, String> entry: kaptServiceMap.entrySet()) {
+            String impName = entry.getValue();
+            if (realClassName.equals(impName)) {
+                this.finalServicePairs.put(entry.getKey(), entry.getValue());
+            }
         }
     }
 }

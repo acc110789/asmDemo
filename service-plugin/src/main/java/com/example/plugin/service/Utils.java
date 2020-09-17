@@ -4,7 +4,10 @@ import com.android.build.api.transform.JarInput;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.gradle.api.Project;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -14,6 +17,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -22,10 +26,46 @@ import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
+import static com.example.plugin.service.Constants.SERVICE_JSON_PATH;
 import static com.example.plugin.service.Constants.TMP_JAR_FILE_NAME;
 
 
 class Utils {
+
+    public static Map<String, String> getAllServicePair(Project applicationProject) throws IOException {
+        Map<String, String> result = new HashMap<>();
+
+        Project rootProject = applicationProject.getRootProject();
+        Set<Project> allProjects = rootProject.getAllprojects();
+
+        for (Project project: allProjects) {
+            File buildDir = project.getBuildFile();
+            File jsonConfigFile = new File(buildDir, SERVICE_JSON_PATH);
+            JSONObject json = Utils.getExistAnnotationInfo(jsonConfigFile);
+            if (json == null) continue;
+
+            Map<String,Object> configMap= json.toMap();
+            for (Map.Entry<String, Object> entry: configMap.entrySet()) {
+                Object value = entry.getValue();
+                if (!(value instanceof String)) continue;
+
+                result.put(entry.getKey(), (String) value);
+            }
+        }
+        return result;
+    }
+
+    @Nullable
+    public static JSONObject getExistAnnotationInfo(File outputFile) throws IOException {
+        if (outputFile == null) return null;
+
+        if (!outputFile.exists()) return null;
+
+        byte[] bytes = getBytes(outputFile);
+        String fileContent = new String(bytes);
+
+        return new JSONObject(fileContent);
+    }
 
     /**
      * 从name中提取出className，
@@ -84,7 +124,7 @@ class Utils {
 
     public static Set<String> getImplSimpleClassNameSet(Map<String, String> kaptServiceMap) {
         Set<String> result = new HashSet<>();
-        for (String implName : kaptServiceMap.keySet()) {
+        for (String implName : kaptServiceMap.values()) {
             String simpleClassName = getSimpleClassName(implName);
             if (simpleClassName != null) result.add(simpleClassName);
         }
