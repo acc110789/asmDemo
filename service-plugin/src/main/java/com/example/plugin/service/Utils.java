@@ -32,6 +32,12 @@ import static com.example.plugin.service.Constants.TMP_JAR_FILE_NAME;
 
 class Utils {
 
+    public static String getSimpleClassNameForZipEntryName(String jarEntryName) {
+        int nameDividerIndex = jarEntryName.lastIndexOf("/");
+        if (nameDividerIndex < 0) return jarEntryName;
+        return jarEntryName.substring(nameDividerIndex + 1);
+    }
+
     public static Map<String, String> getAllServicePair(Project applicationProject) throws IOException {
         Map<String, String> result = new HashMap<>();
 
@@ -39,7 +45,7 @@ class Utils {
         Set<Project> allProjects = rootProject.getAllprojects();
 
         for (Project project: allProjects) {
-            File buildDir = project.getBuildFile();
+            File buildDir = project.getBuildDir();
             File jsonConfigFile = new File(buildDir, SERVICE_JSON_PATH);
             JSONObject json = Utils.getExistAnnotationInfo(jsonConfigFile);
             if (json == null) continue;

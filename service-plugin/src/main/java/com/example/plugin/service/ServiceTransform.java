@@ -213,7 +213,10 @@ class ServiceTransform extends Transform {
                 }
                 String realClassName = className.replace('/', '.');
 
-                checkDetailClassName(realClassName);
+                String simpleClassName = Utils.getSimpleClassNameForZipEntryName(name);
+                if (implServiceSimpleClassNameSet.contains(simpleClassName)) {
+                    checkDetailClassName(realClassName);
+                }
 
                 if (SERVICE_MANAGER_FULL_NAME.equals(realClassName)) {
                     containServiceManager = true;
