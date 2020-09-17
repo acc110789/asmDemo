@@ -6,7 +6,7 @@ buildscript {
     }
     repositories {
         maven {
-            url uri("/Users/zhangxiaolong/maven")
+            url uri(local_maven_location)
         }
         google()
         jcenter()
@@ -24,7 +24,7 @@ buildscript {
 allprojects {
     repositories {
         maven {
-            url uri("/Users/zhangxiaolong/maven")
+            url uri(local_maven_location)
         }
         google()
         jcenter()
